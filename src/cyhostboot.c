@@ -11,6 +11,13 @@
 #include <cybtldr_api.h>
 #include <cybtldr_api2.h>
 
+
+#ifdef DEBUG
+#  define dbg_printf printf
+#else
+#  define dbg_printf
+#endif
+
 static char* g_tty_device = "/dev/ttyACM2";
 static int g_serial_fd = -1;
 
@@ -23,7 +30,7 @@ static int serial_open()
 {
 	struct termios tty;
 
-	printf("Opening serial %s\n", g_tty_device);
+	dbg_printf("Opening serial %s\n", g_tty_device);
 
 	g_serial_fd = open(g_tty_device, O_RDWR | O_NOCTTY);
 	if (g_serial_fd < 0) {
@@ -54,7 +61,7 @@ static int serial_open()
 
 static int serial_close()
 {
-	printf("Closing serial\n");
+	dbg_printf("Closing serial\n");
 	close(g_serial_fd);
 
 	return CYRET_SUCCESS;
@@ -66,7 +73,7 @@ static int serial_read(unsigned char *bytes, int size)
 	unsigned long long start_milli = 0, end_milli = 0;
 	ssize_t read_bytes;
 	struct pollfd fds[1];
-	int poll_ret;
+	int poll_ret, i;
 	unsigned int cur_byte = 0;
 
 	while(1) {
@@ -76,8 +83,8 @@ static int serial_read(unsigned char *bytes, int size)
 		
 		clock_gettime(CLOCK_MONOTONIC, &tp);
 		end_milli = timespec_milliseconds(&tp);
-		if (start_milli && (end_milli - start_milli) > 1000)
-			return CYRET_SUCCESS;
+		if (start_milli && (end_milli - start_milli) > 100)
+			break;
 
 		poll_ret = poll(fds, 1, 0);
 		if (poll_ret == 0) {
@@ -92,7 +99,10 @@ static int serial_read(unsigned char *bytes, int size)
 
 		read_bytes = read(g_serial_fd, &bytes[cur_byte++], 1);
 	}
-
+	dbg_printf("Read %d bytes\n", cur_byte);
+	for(i = 0; i < cur_byte; i++)
+		dbg_printf(" 0x%02x ", bytes[i]);
+	dbg_printf("\n");
 	return CYRET_SUCCESS;
 }
 
@@ -101,7 +111,10 @@ static int serial_write(unsigned char *bytes, int size)
 	int i;
 	ssize_t write_bytes;
 
-	printf("Serial: writing %d bytes to bootloader\n", size);
+	dbg_printf("Serial: writing %d bytes to bootloader\n", size);
+	for(i = 0; i< size; i++)
+		dbg_printf(" 0x%02x ", bytes[i]);
+	dbg_printf("\n");
 	write_bytes = write(g_serial_fd, bytes, size);
 	if (write_bytes != size) {
 		printf("Error when writing bytes\n");
@@ -116,7 +129,7 @@ CyBtldr_CommunicationsData serial_coms = {
 	.CloseConnection = serial_close,
 	.ReadData = serial_read,
 	.WriteData = serial_write,
-	.MaxTransferSize = 256,
+	.MaxTransferSize = 64,
 };
 
 
@@ -136,11 +149,6 @@ int main(int argc, char **argv)
 		printf("Programming failed: %d\n", ret);
 		return 1;
 	}
-	printf("Starting verifying\n");
-	ret = CyBtldr_RunAction(VERIFY, argv[1], NULL, 1, &serial_coms, serial_progress_update);
-	if (ret != CYRET_SUCCESS) {
-		printf("Programming failed: %d\n", ret);
-		return 1;
-	}
+	printf("programming OK !\n");
 	return 0;
 }
