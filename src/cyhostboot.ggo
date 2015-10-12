@@ -1,0 +1,16 @@
+package "cyhostboot" 
+version "0.1"
+purpose  "Utility to flash cyacd files using cypress uart host bootloader"
+usage "cyhostboot [options]"
+
+description "cyhostboot is a cypress host bootloader for Linux"
+
+option  "baudrate"		b	"Bootloader baudrate" default="115200" int optional
+option  "file"			f	"cyacd file to flash" string required
+option  "serial"		s	"Serial port to use" default="/dev/ttyACM0" string optional
+option  "app_id"		a	"Application id to use (0 for no change, or 1 or 2)" default="0" int optional
+
+defgroup "Action" groupdesc="Action to perform (default=`program`)"
+groupoption "program" 	p "Program the file" group="Action" 
+groupoption "erase"	e "Erase memory" group="Action"
+groupoption "verify"	v "Verify file" group="Action"
