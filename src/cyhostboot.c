@@ -166,7 +166,7 @@ static CyBtldr_CommunicationsData serial_coms = {
 
 static void serial_progress_update(unsigned char arrayId, unsigned short rowNum)
 {
-	printf("Flashing array_id %d, row_num %d\n", arrayId, rowNum);
+	printf("Progress: array_id %d, row_num %d\n", arrayId, rowNum);
 }
 
 int main(int argc, char **argv)
