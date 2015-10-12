@@ -1,0 +1,34 @@
+CY8C42_flash_size := 32768
+CY8C42_flash_array_size := 32768
+CY8C42_flash_row_size := 128
+
+PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
+PROJECT_NAME = $(basename $(notdir $(PROJECT_DIR)))
+CROSS_COMPILE := arm-none-eabi-
+ARM_CPU	?= cortex-m0
+
+CFLAGS := -mcpu=$(ARM_CPU) -mthumb -Wno-main -Wall -ffunction-sections -ffat-lto-objects
+INCLUDE_CFLAGS := -I$(PROJECT_DIR)/Generated_Source/PSoC4/ -I$(PROJECT_DIR)/
+
+DEBUG_CFLAGS := -g -O0
+RELEASE_CFLAGS := -O3
+BOARD_TYPE := CY8C42
+
+BUILD_DIR ?= ./build
+
+SRC_C_FILES := $(wildcard $(PROJECT_DIR)/Generated_Source/PSoC4/*.c $(PROJECT_DIR)/*.c)
+BOOTASM_GNU := $(PROJECT_DIR)/Generated_Source/PSoC4/CyBootAsmGnu.s
+
+OBJ_FILES := $(patsubst %.c,%.o,$(SRC_C_FILES)) $(subst .s,.o,$(BOOTASM_GNU))
+OBJ_FILES := $(subst $(PROJECT_DIR),$(BUILD_DIR),$(OBJ_FILES))
+
+$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.c
+	$(CROSS_COMPILE)gcc $(CFLAGS) -o $@ -c $(INCLUDE_CFLAGS) $<
+
+$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.s
+	$(CROSS_COMPILE)as $(INCLUDE_CFLAGS) -o $@ $<
+
+$(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES)
+	$(CROSS_COMPILE)ar -rs $@ $(OBJ_FILES)
+
+all: $(BUILD_DIR)/$(PROJECT_NAME).a
