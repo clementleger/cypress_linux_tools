@@ -22,13 +22,16 @@ BOOTASM_GNU := $(PROJECT_DIR)/Generated_Source/PSoC4/CyBootAsmGnu.s
 OBJ_FILES := $(patsubst %.c,%.o,$(SRC_C_FILES)) $(subst .s,.o,$(BOOTASM_GNU))
 OBJ_FILES := $(subst $(PROJECT_DIR),$(BUILD_DIR),$(OBJ_FILES))
 
-$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.c
+$(BUILD_DIR)/Generated_Source/PSoC4/:
+	mkdir -p $@
+
+$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.c $(BUILD_DIR)/Generated_Source/PSoC4/
 	$(CROSS_COMPILE)gcc $(CFLAGS) -o $@ -c $(INCLUDE_CFLAGS) $<
 
-$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.s
+$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.s $(BUILD_DIR)/Generated_Source/PSoC4/
 	$(CROSS_COMPILE)as $(INCLUDE_CFLAGS) -o $@ $<
 
-$(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES)
+$(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES) $(BUILD_DIR)
 	$(CROSS_COMPILE)ar -rs $@ $(OBJ_FILES)
 
 all: $(BUILD_DIR)/$(PROJECT_NAME).a
