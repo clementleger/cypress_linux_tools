@@ -1,37 +1,63 @@
+
+# Add a entry here to define a new platform
 CY8C42_flash_size := 32768
 CY8C42_flash_array_size := 32768
 CY8C42_flash_row_size := 128
+CY8C42_mcpu := cortex-m0
+CY8C42_cpu_dir := CortexM0
+
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
 
 PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
 PROJECT_NAME = $(basename $(notdir $(PROJECT_DIR)))
+PSOC_CREATOR_DIR ?= $(error PSOC_CREATOR_DIR must be defined)
+PSOC_CREATOR_DIR = $(subst (,\(,$(subst ),\),$(subst $(SPACE),\$(SPACE),$(PSOC_CREATOR_DIR))))
 CROSS_COMPILE := arm-none-eabi-
-ARM_CPU	?= cortex-m0
-
-CFLAGS := -mcpu=$(ARM_CPU) -mthumb -Wno-main -Wall -ffunction-sections -ffat-lto-objects
-INCLUDE_CFLAGS := -I$(PROJECT_DIR)/Generated_Source/PSoC4/ -I$(PROJECT_DIR)/
+BOARD_TYPE ?= CY8C42
+PSOC_TYPE ?= PSoC4
 
 DEBUG_CFLAGS := -g -O0
 RELEASE_CFLAGS := -O3
-BOARD_TYPE := CY8C42
+GEN_SRC_DIR := Generated_Source/$(PSOC_TYPE)/
+
+COMMON_FLAGS := -mcpu=$($(BOARD_TYPE)_mcpu) -mthumb
+
+CFLAGS :=  $(COMMON_FLAGS) -Wno-main -Wall -ffunction-sections -ffat-lto-objects
+ASFLAGS := $(COMMON_FLAGS)
+INCLUDE_CFLAGS := -I$(PROJECT_DIR)/$(GEN_SRC_DIR) -I$(PROJECT_DIR)/
+
+# Special dir from cypress tools
+CYCOMPONENT_LIB := $(PSOC_CREATOR_DIR)/psoc/content/CyComponentLibrary/CyComponentLibrary.cylib/$($(BOARD_TYPE)_cpu_dir)/ARM_GCC_493/Debug/CyComponentLibrary.a
+CYELFTOOL := $(PSOC_CREATOR_DIR)/bin/cyelftool.exe
 
 BUILD_DIR ?= ./build
 
-SRC_C_FILES := $(wildcard $(PROJECT_DIR)/Generated_Source/PSoC4/*.c $(PROJECT_DIR)/*.c)
-BOOTASM_GNU := $(PROJECT_DIR)/Generated_Source/PSoC4/CyBootAsmGnu.s
+SRC_C_FILES := $(wildcard $(PROJECT_DIR)/$(GEN_SRC_DIR)/*.c $(PROJECT_DIR)/*.c)
+BOOTASM_GNU := $(PROJECT_DIR)/$(GEN_SRC_DIR)/CyBootAsmGnu.s
 
 OBJ_FILES := $(patsubst %.c,%.o,$(SRC_C_FILES)) $(subst .s,.o,$(BOOTASM_GNU))
 OBJ_FILES := $(subst $(PROJECT_DIR),$(BUILD_DIR),$(OBJ_FILES))
 
-$(BUILD_DIR)/Generated_Source/PSoC4/:
-	mkdir -p $@
+all: $(BUILD_DIR)/$(PROJECT_NAME).elf
 
-$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.c $(BUILD_DIR)/Generated_Source/PSoC4/
+$(BUILD_DIR)/%.o: $(PROJECT_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CROSS_COMPILE)gcc $(CFLAGS) -o $@ -c $(INCLUDE_CFLAGS) $<
 
-$(BUILD_DIR)/Generated_Source/PSoC4/%.o: $(PROJECT_DIR)/Generated_Source/PSoC4/%.s $(BUILD_DIR)/Generated_Source/PSoC4/
-	$(CROSS_COMPILE)as $(INCLUDE_CFLAGS) -o $@ $<
+$(BUILD_DIR)/%.o: $(PROJECT_DIR)/%.s
+	@mkdir -p $(dir $@)
+	$(CROSS_COMPILE)as $(ASFLAGS) $(INCLUDE_CFLAGS) -o $@ $<
 
 $(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES) $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CROSS_COMPILE)ar -rs $@ $(OBJ_FILES)
+	
+$(BUILD_DIR)/$(PROJECT_NAME).elf: $(BUILD_DIR)/$(PROJECT_NAME).a
+	@mkdir -p $(dir $@)
+	$(CROSS_COMPILE)gcc -specs=nano.specs $(CFLAGS) -Wl,-Map,$(BUILD_DIR)/$(PROJECT_NAME).map -L$(BUILD_DIR)/ -T $(PROJECT_DIR)/$(GEN_SRC_DIR)/cm0gcc.ld -o $@ -Wl,--start-group $^ "$(CYCOMPONENT_LIB)" -Wl,--end-group -Wl,--gc-sections 
+	wine "$(CYELFTOOL)" -B $@ --flash_row_size $($(BOARD_TYPE)_flash_row_size) --flash_size $($(BOARD_TYPE)_flash_size) --flash_array_size $($(BOARD_TYPE)_flash_array_size)
+	wine "$(CYELFTOOL)" -S $@
 
-all: $(BUILD_DIR)/$(PROJECT_NAME).a
+clean:
+	rm -rf $(BUILD_DIR)
