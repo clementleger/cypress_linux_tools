@@ -102,15 +102,20 @@ int CyBtldr_StartBootloadOperation(CyBtldr_CommunicationsData* comm, unsigned lo
     if (CYRET_SUCCESS != err)
         err |= CYRET_ERR_COMM_MASK;
 
-    if (CYRET_SUCCESS == err)
+    if (CYRET_SUCCESS == err) {
         err = CyBtldr_CreateEnterBootLoaderCmd(inBuf, &inSize, &outSize, securityKeyBuf);
-    if (CYRET_SUCCESS == err)
+    }
+    if (CYRET_SUCCESS == err) {
         err = CyBtldr_TransferData(inBuf, inSize, outBuf, outSize);
-    if (CYRET_SUCCESS == err)
+    }
+    if (CYRET_SUCCESS == err) {
         err = CyBtldr_ParseEnterBootLoaderCmdResult(outBuf, outSize, &siliconId, &siliconRev, blVer, &status);
-    else if (CyBtldr_TryParseParketStatus(outBuf, outSize, &status) == CYRET_SUCCESS)
+	if (!err) {
+		printf("Got silicon id 0x%08lx, rev 0x%02x\n", siliconId, siliconRev);
+	}
+    } else if (CyBtldr_TryParseParketStatus(outBuf, outSize, &status) == CYRET_SUCCESS) {
         err = status | CYRET_ERR_BTLDR_MASK; //if the response we get back is a valid packet overide the err with the response's status
-
+    }
     if (CYRET_SUCCESS == err)
     {
         if (CYRET_SUCCESS != status)
