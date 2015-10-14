@@ -59,8 +59,9 @@ $(BUILD_DIR)/$(PROJECT_NAME).elf: $(BUILD_DIR)/$(PROJECT_NAME).a
 	wine "$(CYELFTOOL)" -B $@ --flash_row_size $($(CPU_TYPE)_flash_row_size) --flash_size $($(CPU_TYPE)_flash_size) --flash_array_size $($(CPU_TYPE)_flash_array_size)
 	wine "$(CYELFTOOL)" -S $@
 
+# --gap-fill 0x00 causes some infinite loop, FIXME
 $(BUILD_DIR)/$(PROJECT_NAME).hex: $(BUILD_DIR)/$(PROJECT_NAME).elf
-	$(CROSS_COMPILE)objcopy --gap-fill 0x00 -O ihex $^ $@
+	$(CROSS_COMPILE)objcopy -O ihex -v $^ $@
 
 clean:
 	rm -rf $(BUILD_DIR)
