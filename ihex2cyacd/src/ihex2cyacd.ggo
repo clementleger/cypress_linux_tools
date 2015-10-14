@@ -7,7 +7,6 @@ description "ihex2cyacd is a an utility to create cyacd files"
 
 option  "input"			i	"Input ihex file" string required
 option  "bootloader_size"	b	"Bootloader text size file" int required
-option  "flash_row_size"	r	"Flash row size" int required
 option  "output"		o	"Output cyacd file" string required
 option  "cpu"			c	"CPU type" values="CY8C41","CY8C42" enum default="CY8C42" optional
 

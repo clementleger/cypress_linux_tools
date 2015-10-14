@@ -12,16 +12,17 @@ LFLAGS :=
 all: ihex2cyacd
 
 $(BUILD_DIR)/ihex2cyacd_cmdline.c: $(SRC_DIR)/ihex2cyacd.ggo
+	@mkdir -p $(dir $@)
 	gengetopt -i $< -F ihex2cyacd_cmdline --output-dir=$(BUILD_DIR)/ --func-name=ihex2cyacd_cmdline_parser -a ihex2cyacd_args_info
 
 $(BUILD_DIR)/ihex2cyacd_cmdline.h: $(BUILD_DIR)/ihex2cyacd_cmdline.c
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(BUILD_DIR)/ihex2cyacd_cmdline.h
-	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.c
-	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) -c -o $@ $^ $(CFLAGS) 
 
 ihex2cyacd: $(OBJ_FILES) $(BUILD_DIR)/ihex2cyacd_cmdline.o
