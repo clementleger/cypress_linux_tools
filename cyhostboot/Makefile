@@ -31,3 +31,7 @@ cyhostboot: $(OBJ_FILES) $(SRC_DIR)/cyhostboot.c $(BUILD_DIR)/cyhostboot_cmdline
 
 clean:
 	rm -rf cyhostboot $(BUILD_DIR)
+
+install:
+	cp cyhostboot /bin/
+	

@@ -9,7 +9,7 @@ HDR_FILES := $(wildcard $(SRC_DIR)/*.h)
 CFLAGS := -g -Wall -I$(BUILD_DIR)
 LFLAGS := 
 
-all: ihex2cyacd
+all: check
 
 $(BUILD_DIR)/ihex2cyacd_cmdline.c: $(SRC_DIR)/ihex2cyacd.ggo
 	@mkdir -p $(dir $@)
@@ -30,3 +30,11 @@ ihex2cyacd: $(OBJ_FILES) $(BUILD_DIR)/ihex2cyacd_cmdline.o
 
 clean:
 	rm -rf ihex2cyacd $(BUILD_DIR)
+
+check: ihex2cyacd
+	./ihex2cyacd -i test/Striplight_bootloadable.hex -o out.cyacd -b 4352
+	diff out.cyacd test/Striplight_bootloadable.cyacd
+
+install:
+	cp ihex2cyacd /bin/
+
