@@ -122,8 +122,6 @@ int main(int argc, char **argv)
 
 	infos = &header_infos[args_info.cpu_arg];
 
-	bootloader_text_rows = args_info.bootloader_size_arg / infos->flash_row_size;
-
 	while (getline(&line_ptr, &line_length, input_hex) > 0) {
 		ret = parse_ihex_line(line_ptr, &length, &addr, &type, data);
 		if (ret) {
@@ -147,9 +145,14 @@ int main(int argc, char **argv)
 	/* Add cyacd header */
 	fprintf(output_cyacd, "%08X%02X00\r\n", infos->silicon_id, infos->silicon_rev);
 
+	bootloader_text_rows = args_info.bootloader_size_arg / infos->flash_row_size;
+	/* The result is not an integer, add one row */
+	if (args_info.bootloader_size_arg % infos->flash_row_size)
+		bootloader_text_rows++;
+
 	cur_row_num = bootloader_text_rows;
 
-	for (addr = args_info.bootloader_size_arg; addr < last_addr; addr += infos->flash_row_size) {
+	for (addr = cur_row_num * infos->flash_row_size; addr < last_addr; addr += infos->flash_row_size) {
 
 		line_empty = 1;
 		/* Is the line empty ? */

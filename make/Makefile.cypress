@@ -5,6 +5,7 @@ CY8C42_flash_array_size := 32768
 CY8C42_flash_row_size := 128
 CY8C42_mcpu := cortex-m0
 CY8C42_cpu_dir := CortexM0
+CY8C42_bootloader_size := 4296
 
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
@@ -39,7 +40,7 @@ BOOTASM_GNU := $(PROJECT_DIR)/$(GEN_SRC_DIR)/CyBootAsmGnu.s
 OBJ_FILES := $(patsubst %.c,%.o,$(SRC_C_FILES)) $(subst .s,.o,$(BOOTASM_GNU))
 OBJ_FILES := $(subst $(PROJECT_DIR),$(BUILD_DIR),$(OBJ_FILES))
 
-all: $(BUILD_DIR)/$(PROJECT_NAME).hex
+all: $(BUILD_DIR)/$(PROJECT_NAME).cyacd
 
 $(BUILD_DIR)/%.o: $(PROJECT_DIR)/%.c
 	@mkdir -p $(dir $@)
@@ -59,9 +60,11 @@ $(BUILD_DIR)/$(PROJECT_NAME).elf: $(BUILD_DIR)/$(PROJECT_NAME).a
 	wine "$(CYELFTOOL)" -B $@ --flash_row_size $($(CPU_TYPE)_flash_row_size) --flash_size $($(CPU_TYPE)_flash_size) --flash_array_size $($(CPU_TYPE)_flash_array_size)
 	wine "$(CYELFTOOL)" -S $@
 
-# --gap-fill 0x00 causes some infinite loop, FIXME
 $(BUILD_DIR)/$(PROJECT_NAME).hex: $(BUILD_DIR)/$(PROJECT_NAME).elf
 	$(CROSS_COMPILE)objcopy -O ihex -v $^ $@
+	
+$(BUILD_DIR)/$(PROJECT_NAME).cyacd: $(BUILD_DIR)/$(PROJECT_NAME).hex
+	ihex2cyacd -i $^ -o $@ -b $($(CPU_TYPE)_bootloader_size)
 
 clean:
 	rm -rf $(BUILD_DIR)
