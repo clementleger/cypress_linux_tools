@@ -13,7 +13,6 @@ SPACE := $(EMPTY) $(EMPTY)
 PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
 PROJECT_NAME = $(basename $(notdir $(PROJECT_DIR)))
 PSOC_CREATOR_DIR ?= $(error PSOC_CREATOR_DIR must be defined)
-PSOC_CREATOR_DIR = $(subst (,\(,$(subst ),\),$(subst $(SPACE),\$(SPACE),$(PSOC_CREATOR_DIR))))
 CROSS_COMPILE := arm-none-eabi-
 CPU_TYPE ?= CY8C42
 PSOC_TYPE ?= PSoC4
