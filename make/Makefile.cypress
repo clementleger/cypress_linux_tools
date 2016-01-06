@@ -7,15 +7,15 @@ CY8C42_mcpu := cortex-m0
 CY8C42_cpu_dir := CortexM0
 CY8C42_bootloader_size := 4296
 
-EMPTY :=
-SPACE := $(EMPTY) $(EMPTY)
-
 PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
 PROJECT_NAME = $(basename $(notdir $(PROJECT_DIR)))
 PSOC_CREATOR_DIR ?= $(error PSOC_CREATOR_DIR must be defined)
 CROSS_COMPILE := arm-none-eabi-
 CPU_TYPE ?= CY8C42
 PSOC_TYPE ?= PSoC4
+
+UPLOAD_BAUDRATE	?= 115200
+SERIAL_PORT	?= /dev/ttyACM0
 
 DEBUG_CFLAGS := -g -O0
 RELEASE_CFLAGS := -O3
@@ -49,7 +49,7 @@ $(BUILD_DIR)/%.o: $(PROJECT_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(CROSS_COMPILE)as $(ASFLAGS) $(INCLUDE_CFLAGS) -o $@ $<
 
-$(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES) $(BUILD_DIR)
+$(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES)
 	@mkdir -p $(dir $@)
 	$(CROSS_COMPILE)ar -rs $@ $(OBJ_FILES)
 	
@@ -67,3 +67,6 @@ $(BUILD_DIR)/$(PROJECT_NAME).cyacd: $(BUILD_DIR)/$(PROJECT_NAME).hex
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+upload: $(BUILD_DIR)/$(PROJECT_NAME).cyacd
+	cyhostboot -f $< -b $(UPLOAD_BAUDRATE) -s $(SERIAL_PORT)
