@@ -2,6 +2,7 @@
 # DISCLAIMER
 
 This work is absolutely **not related** to cypress in any way.
+I am not to be liable for direct, indirect or consequential damages of your devices.
 
 ## Introduction
 
