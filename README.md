@@ -13,7 +13,7 @@ It has only been successfully tested with a CY8CKIT-049 42xx kit.
 The prerequisites are the following:
    - `gengetopt`
    - `make`
-   - `wine` (to run cyelftool when using makefile)
+   - `wine` (to run `cyelftool` when using makefile)
    - An arm toolchain (arm-none-eabi-)
 
 In order to build and install these utilities:
@@ -51,7 +51,7 @@ To build it, the `make` command should be sufficient.
 
 Thanks from https://github.com/gv1/hex2cyacd, the format is well explained and it was possible to write a C tool.
 ihex2cyacd is a an utility to create cyacd files from ihex files.
-In order to use it, the simplest way is to use it
+Using the Makefile.cypress will hide the usage.
 
 ### Usage
 
@@ -70,6 +70,7 @@ In order to use it, the simplest way is to use it
 
 A Makefile.cypress file is available in the repository in order to easily compile cydsn projects.
 Two variable are required to be set which are PSOC_CREATOR_DIR and PROJECT_DIR.
+Additionnally, An ARM toolchain is necessary. Code Sourcery ones are sufficient.
 The easiest way to use it is to create a Makefile with the following content
 
 ```
@@ -79,6 +80,7 @@ PROJECT_DIR := Path_to_project.cydsn
 include Makefile.cypress
 
 ```
+`cyelftool` is still used though wine (not reversed yet).
 
 Then type `make` to compile the application.
 Note that some old generated files may be outdated and can't compile.
@@ -92,4 +94,4 @@ The final cyacd file can be flashed using `cyhostboot`.
 ## Notes
 
 The `cyelftool` cypress utility has not yet been reversed.
-However thanks to wine, this utility can be used and 
+However thanks to wine, this utility can be used under Linux.
