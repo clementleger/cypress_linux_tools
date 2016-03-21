@@ -1,25 +1,27 @@
 
 # Add a entry here to define a new platform
-CY8C42_flash_size := 32768
-CY8C42_flash_array_size := 32768
-CY8C42_flash_row_size := 128
-CY8C42_mcpu := cortex-m0
-CY8C42_cpu_dir := CortexM0
-CY8C42_bootloader_size := 4296
+CY8C49_flash_size := 32768
+CY8C49_flash_array_size := 32768
+CY8C49_flash_row_size := 128
+CY8C49_mcpu := cortex-m0
+CY8C49_cpu_dir := CortexM0
+CY8C49_bootloader_size := 4296
+CY8C49_psoc_type := PSoC4
 
 PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
 PROJECT_NAME = $(basename $(notdir $(PROJECT_DIR)))
 PSOC_CREATOR_DIR ?= $(error PSOC_CREATOR_DIR must be defined)
 CROSS_COMPILE := arm-none-eabi-
-CPU_TYPE ?= CY8C42
-PSOC_TYPE ?= PSoC4
+CPU_TYPE ?= CY8C49
 
+# Baudrate speed to communicate with the Cypress bootloader
 UPLOAD_BAUDRATE	?= 115200
+# Serial port of the device
 SERIAL_PORT	?= /dev/ttyACM0
 
 DEBUG_CFLAGS := -g -O0
 RELEASE_CFLAGS := -O3
-GEN_SRC_DIR := Generated_Source/$(PSOC_TYPE)/
+GEN_SRC_DIR := Generated_Source/$($(CPU_TYPE)_psoc_type)/
 
 COMMON_FLAGS := -mcpu=$($(CPU_TYPE)_mcpu) -mthumb
 
