@@ -14,24 +14,24 @@ CROSS_COMPILE := arm-none-eabi-
 CPU_TYPE ?= CY8C42
 PSOC_TYPE ?= PSoC4
 
-UPLOAD_BAUDRATE	?= 115200
-SERIAL_PORT	?= /dev/ttyACM0
-
-DEBUG_CFLAGS := -g -O0
-RELEASE_CFLAGS := -O3
-GEN_SRC_DIR := Generated_Source/$(PSOC_TYPE)/
-
-COMMON_FLAGS := -mcpu=$($(CPU_TYPE)_mcpu) -mthumb
-
-CFLAGS :=  $(COMMON_FLAGS) -Wno-main -Wall -ffunction-sections -ffat-lto-objects
-ASFLAGS := $(COMMON_FLAGS)
-INCLUDE_CFLAGS := -I$(PROJECT_DIR)/$(GEN_SRC_DIR) -I$(PROJECT_DIR)/
-
 # Special dir from cypress tools
 CYCOMPONENT_LIB := $(PSOC_CREATOR_DIR)/psoc/content/CyComponentLibrary/CyComponentLibrary.cylib/$($(CPU_TYPE)_cpu_dir)/ARM_GCC_493/Debug/CyComponentLibrary.a
 CYELFTOOL := $(PSOC_CREATOR_DIR)/bin/cyelftool.exe
 
+# Upload stuff
+UPLOAD_BAUDRATE	?= 115200
+SERIAL_PORT	?= /dev/ttyACM0
+ 
+# Directory
+GEN_SRC_DIR := Generated_Source/$(PSOC_TYPE)/
 BUILD_DIR ?= ./build
+
+COMMON_FLAGS := -mcpu=$($(CPU_TYPE)_mcpu) -mthumb
+
+CFLAGS :=  $(COMMON_FLAGS) -Wno-main -ffunction-sections -ffat-lto-objects $(USER_CFLAGS)
+LFLAGS :=  -Wl,--gc-sections -Wl,-Map,$(BUILD_DIR)/$(PROJECT_NAME).map -L$(BUILD_DIR)/ -T $(PROJECT_DIR)/$(GEN_SRC_DIR)/cm0gcc.ld
+ASFLAGS := $(COMMON_FLAGS)
+INCLUDE_CFLAGS := -I$(PROJECT_DIR)/$(GEN_SRC_DIR) -I$(PROJECT_DIR)/
 
 SRC_C_FILES := $(wildcard $(PROJECT_DIR)/$(GEN_SRC_DIR)/*.c $(PROJECT_DIR)/*.c)
 BOOTASM_GNU := $(PROJECT_DIR)/$(GEN_SRC_DIR)/CyBootAsmGnu.s
@@ -55,7 +55,7 @@ $(BUILD_DIR)/$(PROJECT_NAME).a: $(OBJ_FILES)
 	
 $(BUILD_DIR)/$(PROJECT_NAME).elf: $(BUILD_DIR)/$(PROJECT_NAME).a
 	@mkdir -p $(dir $@)
-	$(CROSS_COMPILE)gcc -specs=nano.specs $(CFLAGS) -Wl,-Map,$(BUILD_DIR)/$(PROJECT_NAME).map -L$(BUILD_DIR)/ -T $(PROJECT_DIR)/$(GEN_SRC_DIR)/cm0gcc.ld -o $@ -Wl,--start-group $^ "$(CYCOMPONENT_LIB)" -Wl,--end-group -Wl,--gc-sections 
+	$(CROSS_COMPILE)gcc -specs=nano.specs $(CFLAGS) -o $@ -Wl,--start-group $^ "$(CYCOMPONENT_LIB)" -Wl,--end-group $(LFLAGS) 
 	wine "$(CYELFTOOL)" -B $@ --flash_row_size $($(CPU_TYPE)_flash_row_size) --flash_size $($(CPU_TYPE)_flash_size) --flash_array_size $($(CPU_TYPE)_flash_array_size)
 	wine "$(CYELFTOOL)" -S $@
 
