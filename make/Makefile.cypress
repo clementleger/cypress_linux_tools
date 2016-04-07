@@ -5,7 +5,7 @@ CY8C49_flash_array_size := 32768
 CY8C49_flash_row_size := 128
 CY8C49_mcpu := cortex-m0
 CY8C49_cpu_dir := CortexM0
-CY8C49_bootloader_size := 4296
+CY8C49_bootloader_size := 4352
 CY8C49_psoc_type := PSoC4
 
 PROJECT_DIR ?= $(error PROJECT_DIR must be defined)
