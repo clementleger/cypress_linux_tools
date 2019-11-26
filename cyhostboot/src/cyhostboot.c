@@ -53,32 +53,26 @@ static int serial_open()
 {
 	speed_t baudrate = get_serial_speed(args_info.baudrate_arg);
 
-	g_serial_fd = open( args_info.serial_arg, O_RDWR );
-	if( g_serial_fd < 0 )
-	{
-		printf("Unable to open device: %s\n", args_info.serial_arg );
+	g_serial_fd = open(args_info.serial_arg, O_RDWR);
+	if (g_serial_fd < 0) {
+		printf("Failed to open serial: %s\n", strerror(errno));
 		return 1;
 	}
 	// setting default baud rate and attributes
 	struct termios port_settings;
-	memset( &port_settings, 0, sizeof( port_settings ) );
-	cfsetispeed( &port_settings, baudrate );
-	cfsetospeed( &port_settings, baudrate );
-	if( args_info.odd_given )
-	{
-		printf( "odd parity\n");
+	memset (&port_settings, 0, sizeof(port_settings));
+	cfsetispeed (&port_settings, baudrate);
+	cfsetospeed (&port_settings, baudrate);
+	if (args_info.odd_given) {
+		printf ("odd parity\n");
 		port_settings.c_cflag |= PARENB; // enable parity
 		port_settings.c_cflag |= PARODD; // enable odd parity => enable odd parity
-	}
-	else if( args_info.even_given )
-	{
-		printf( "even parity\n");
+	} else if (args_info.even_given) {
+		printf ( "even parity\n");
 		port_settings.c_cflag |= PARENB; // enable parity
 		port_settings.c_cflag &= ~PARODD; // disable odd parity => enable even parity
-	}
-	else
-	{
-		printf( "no parity\n" );
+	} else {
+		printf ("no parity\n");
 		port_settings.c_cflag &= ~PARENB; // disable parity
 	}
 	port_settings.c_cflag &= ~CSTOPB; // disable extra stop bit => one stop bit
@@ -94,9 +88,8 @@ static int serial_open()
 	port_settings.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
 	port_settings.c_cc[VTIME] = 0; // do not wait, return immediately
 	port_settings.c_cc[VMIN] = 0; // return as soon as some data
-	if( tcsetattr( g_serial_fd, TCSAFLUSH, &port_settings ) != 0 )
-	{
-		printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+	if (tcsetattr(g_serial_fd, TCSAFLUSH, &port_settings) != 0) {
+		printf ("Error %i from tcsetattr: %s\n", errno, strerror(errno));
 		return 1;
 	}
 
@@ -183,6 +176,7 @@ static CyBtldr_CommunicationsData serial_coms = {
 	.WriteData = serial_write,
 	.MaxTransferSize = 64,
 };
+
 
 static void serial_progress_update(unsigned char arrayId, unsigned short rowNum)
 {
