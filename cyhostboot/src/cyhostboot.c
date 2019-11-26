@@ -21,6 +21,7 @@
 #endif
 
 #define TRANSFER_SIZE	64
+#define KEY_BYTES       6
 
 static struct cyhostboot_args_info args_info;
 
@@ -183,48 +184,12 @@ static CyBtldr_CommunicationsData serial_coms = {
 	.MaxTransferSize = 64,
 };
 
-
-static unsigned char hex_decode( unsigned char v )
-{
-	unsigned char rv = 0xff;
-
-	if( v < '0' )
-	{
-		printf ( "error: illegal hex character %c\n", v );
-	}
-	else if ( v <= '9' )
-	{
-		rv = v - '0';
-	}
-	else if ( v < 'A' )
-	{
-		printf ("error: illegal hex character %c\n", v );
-	}
-	else if ( v <= 'F' )
-	{
-		rv = v - 'A' + 10;
-	}
-	else if ( v < 'a' )
-	{
-		printf( "error: illegal hex character %c\n",v );
-	}
-	else if ( v <= 'f' )
-	{
-		rv = v- 'a' + 10;
-	}
-	else
-	{
-		printf( "error: illegal hex character %c\n",v );
-	}
-	return rv;
-}
-
 static void serial_progress_update(unsigned char arrayId, unsigned short rowNum)
 {
 	printf("Progress: array_id %d, row_num %d\n", arrayId, rowNum);
 }
 
-unsigned char sec_key[6];
+unsigned char sec_key[KEY_BYTES];
 
 int main(int argc, char **argv)
 {
@@ -247,20 +212,18 @@ int main(int argc, char **argv)
 	if (action == PROGRAM)
 		printf("Programing file %s\n", args_info.file_arg);
 
-	if (args_info.key_given )
-	{
-		for( int i=0; i<12; i+=2 )
-		{
-			unsigned char k = 0;
-			unsigned char *c = (unsigned char *)&args_info.key_arg[i];
-
-			k|=hex_decode( c[0] )<<4;
-			k|=hex_decode( c[1] );
-
-			sec_key[i>>1]=k;
-
-			key = sec_key;
+	if (args_info.key_given) {
+		char *start = args_info.key_arg;
+		for (int i=0; i<KEY_BYTES; i++) {
+			char *end = "\0";
+			sec_key[i] = strtoul( start, &end, 0 );
+			if (*end == '\0')
+				break;
+			// end points to a character that is most probably comma or some other non number separator
+			end++;
+			start = end;
 		}
+		key = sec_key;
 	}
 
 	printf("Start %s on serial %s, baudrate %d\n", action_str, args_info.serial_arg, args_info.baudrate_arg);
