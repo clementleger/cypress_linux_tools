@@ -33,6 +33,10 @@ To build it, the `make` command should be sufficient.
 ### Usage
 
 ```
+Usage: cyhostboot [options]
+
+cyhostboot is a cypress host bootloader for Linux
+
   -h, --help           Print help and exit
   -V, --version        Print version and exit
   -b, --baudrate=INT   Bootloader baudrate  (default=`115200')
@@ -40,12 +44,21 @@ To build it, the `make` command should be sufficient.
   -s, --serial=STRING  Serial port to use  (default=`/dev/ttyACM0')
   -a, --app_id=INT     Application id to use (0 for no change, or 1 or 2)
                          (default=`0')
+  -k, --key=STRING     Security key for unlocking the bootloader in hex string
+                         like 01268bcf347c
 
  Group: Action
   Action to perform (default=`program`)
   -p, --program        Program the file
   -e, --erase          Erase memory
   -v, --verify         Verify file
+
+ Group: Parity
+  Parity bit used for communication (default=`noparity`)
+  -N, --noparity       Do not use parity bit
+  -E, --even           Parity bit is even
+  -O, --odd            Parity bit is odd
+
 ```
 
 ## iHex to cyacd format

@@ -9,8 +9,14 @@ option  "baudrate"		b	"Bootloader baudrate" default="115200" int optional
 option  "file"			f	"cyacd file to flash" string required
 option  "serial"		s	"Serial port to use" default="/dev/ttyACM0" string optional
 option  "app_id"		a	"Application id to use (0 for no change, or 1 or 2)" default="0" int optional
+option  "key"           k   "Security key for unlocking the bootloader in hex string like 0x01,0x26,0x8b,0xcf,0x34,0x7c" string optional
 
 defgroup "Action" groupdesc="Action to perform (default=`program`)"
 groupoption "program" 	p "Program the file" group="Action" 
-groupoption "erase"	e "Erase memory" group="Action"
+groupoption "erase"	    e "Erase memory" group="Action"
 groupoption "verify"	v "Verify file" group="Action"
+
+defgroup "Parity" groupdesc="Parity bit used for communication (default=`noparity`)"
+groupoption "noparity"  N "Do not use parity bit" group="Parity"
+groupoption "even"      E "Parity bit is even" group="Parity"
+groupoption "odd"       O "Parity bit is odd" group="Parity"

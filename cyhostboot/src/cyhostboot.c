@@ -21,6 +21,7 @@
 #endif
 
 #define TRANSFER_SIZE	64
+#define KEY_BYTES       6
 
 static struct cyhostboot_args_info args_info;
 
@@ -29,7 +30,7 @@ static struct cyhostboot_args_info args_info;
  */
 static int g_serial_fd = -1;
 
-static unsigned long long timespec_milliseconds(struct timespec *a) 
+static unsigned long long timespec_milliseconds(struct timespec *a)
 {
 	return a->tv_sec*1000 + a->tv_nsec/1000000;
 }
@@ -50,32 +51,45 @@ static speed_t get_serial_speed(int baudrate)
 
 static int serial_open()
 {
-	struct termios tty;
 	speed_t baudrate = get_serial_speed(args_info.baudrate_arg);
 
-	dbg_printf("Opening serial %s\n", args_info.serial_arg);
-
-	g_serial_fd = open(args_info.serial_arg, O_RDWR | O_NOCTTY);
+	g_serial_fd = open(args_info.serial_arg, O_RDWR);
 	if (g_serial_fd < 0) {
 		printf("Failed to open serial: %s\n", strerror(errno));
 		return 1;
 	}
-
-	if(tcgetattr(g_serial_fd, &tty) < 0) {
-		printf( "Failed to get serial port attribute\n");
-		return 1;
+	// setting default baud rate and attributes
+	struct termios port_settings;
+	memset (&port_settings, 0, sizeof(port_settings));
+	cfsetispeed (&port_settings, baudrate);
+	cfsetospeed (&port_settings, baudrate);
+	if (args_info.odd_given) {
+		printf ("odd parity\n");
+		port_settings.c_cflag |= PARENB; // enable parity
+		port_settings.c_cflag |= PARODD; // enable odd parity => enable odd parity
+	} else if (args_info.even_given) {
+		printf ( "even parity\n");
+		port_settings.c_cflag |= PARENB; // enable parity
+		port_settings.c_cflag &= ~PARODD; // disable odd parity => enable even parity
+	} else {
+		printf ("no parity\n");
+		port_settings.c_cflag &= ~PARENB; // disable parity
 	}
-
-	cfmakeraw(&tty);
-	/* Set Baud Rate */
-	cfsetospeed (&tty, baudrate);
-	cfsetispeed (&tty, baudrate);
-
-	tcflush(g_serial_fd, TCIFLUSH);
-	tcflush(g_serial_fd, TCOFLUSH);
-
-	if (tcsetattr(g_serial_fd, TCSANOW, &tty) < 0) {
-		printf( "Failed to set serial port attribute\n");
+	port_settings.c_cflag &= ~CSTOPB; // disable extra stop bit => one stop bit
+	port_settings.c_cflag |= CS8; // 8 bits per byte
+	port_settings.c_cflag &= ~CRTSCTS; // Disable RTS/CTS hardware flow control
+	port_settings.c_cflag |= CREAD | CLOCAL; // turn on read and disable ctrl lines
+	port_settings.c_lflag &= ~ICANON; // disable canonical mode
+	port_settings.c_lflag &= ~(ECHO | ECHOE | ECHONL); // disable any kind of echo
+	port_settings.c_lflag &= ~ISIG; // disable interruption of INTR, QUIT and SUSP
+	port_settings.c_iflag &= ~(IXON | IXOFF | IXANY); // turn off sw flow control
+	port_settings.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received bytes
+	port_settings.c_oflag &= ~(OPOST); // Prevent special interpretation of output bytes (e.g. newline chars)
+	port_settings.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
+	port_settings.c_cc[VTIME] = 0; // do not wait, return immediately
+	port_settings.c_cc[VMIN] = 0; // return as soon as some data
+	if (tcsetattr(g_serial_fd, TCSAFLUSH, &port_settings) != 0) {
+		printf ("Error %i from tcsetattr: %s\n", errno, strerror(errno));
 		return 1;
 	}
 
@@ -169,10 +183,13 @@ static void serial_progress_update(unsigned char arrayId, unsigned short rowNum)
 	printf("Progress: array_id %d, row_num %d\n", arrayId, rowNum);
 }
 
+unsigned char sec_key[KEY_BYTES];
+
 int main(int argc, char **argv)
 {
 	int ret, action = PROGRAM;
 	const char *action_str = "programing";
+	unsigned char *key = NULL;
 
 	if (cyhostboot_cmdline_parser(argc, argv, &args_info) != 0) {
 		return EXIT_FAILURE;
@@ -189,8 +206,22 @@ int main(int argc, char **argv)
 	if (action == PROGRAM)
 		printf("Programing file %s\n", args_info.file_arg);
 
+	if (args_info.key_given) {
+		char *start = args_info.key_arg;
+		for (int i=0; i<KEY_BYTES; i++) {
+			char *end = "\0";
+			sec_key[i] = strtoul( start, &end, 0 );
+			if (*end == '\0')
+				break;
+			// end points to a character that is most probably comma or some other non number separator
+			end++;
+			start = end;
+		}
+		key = sec_key;
+	}
+
 	printf("Start %s on serial %s, baudrate %d\n", action_str, args_info.serial_arg, args_info.baudrate_arg);
-	ret = CyBtldr_RunAction(action, args_info.file_arg, NULL, 1, &serial_coms, serial_progress_update);
+	ret = CyBtldr_RunAction(action, args_info.file_arg, key, 1, &serial_coms, serial_progress_update);
 	if (ret != CYRET_SUCCESS) {
 		printf("%s failed: %d\n", action_str, ret);
 		return 1;
