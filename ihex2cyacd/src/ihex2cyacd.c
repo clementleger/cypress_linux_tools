@@ -36,7 +36,7 @@ static struct ihex2cyacd_args_info args_info;
 	strncpy(__out_str, __str, __n);			\
 	__str += __n;
 
-static int parse_ihex_line(const char *line, uint8_t *length, uint16_t *addr, uint8_t *type, uint8_t data[MAX_IHEX_FILE_LENGTH])
+static int parse_ihex_line(const char *line, uint8_t *length, uint32_t *addr, uint8_t *type, uint8_t data[MAX_IHEX_FILE_LENGTH])
 {
 	char tmp_buf[MAX_IHEX_FILE_LENGTH];
 	int i;
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	uint32_t bootloader_text_rows;
 	char *line_ptr;
 	uint8_t data[MAX_IHEX_FILE_LENGTH], length, type;
-	uint16_t addr;
+	uint32_t addr;
 	FILE *input_hex, *output_cyacd;
 	struct cyacd_header_info *infos;
 	size_t line_length = MAX_IHEX_FILE_LENGTH;
@@ -153,7 +153,6 @@ int main(int argc, char **argv)
 	cur_row_num = bootloader_text_rows;
 
 	for (addr = cur_row_num * infos->flash_row_size; addr < last_addr; addr += infos->flash_row_size) {
-
 		line_empty = 1;
 		/* Is the line empty ? */
 		for (i = 0; i < infos->flash_row_size; i++) {
